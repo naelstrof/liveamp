@@ -20,10 +20,12 @@ NTexture.o: NTexture.h NTexture.cpp
 install: shaders/flat.frag shaders/flat.vert textures/desktop textures/desktop.png liveamp
 	echo "Installing to $(DESTDIR)/$(INSTALLDIR)..."
 	mkdir -p $(DESTDIR)/$(INSTALLDIR)
-	cp shaders/flat.frag $(DESTDIR)/$(INSTALLDIR)
-	cp shaders/flat.vert $(DESTDIR)/$(INSTALLDIR)
-	cp textures/desktop $(DESTDIR)/$(INSTALLDIR)
-	cp textures/desktop.png $(DESTDIR)/$(INSTALLDIR)
+	mkdir -p $(DESTDIR)/$(INSTALLDIR)/shaders
+	mkdir -p $(DESTDIR)/$(INSTALLDIR)/textures
+	cp shaders/flat.frag $(DESTDIR)/$(INSTALLDIR)/shaders
+	cp shaders/flat.vert $(DESTDIR)/$(INSTALLDIR)/shaders
+	cp textures/desktop $(DESTDIR)/$(INSTALLDIR)/textures
+	cp textures/desktop.png $(DESTDIR)/$(INSTALLDIR)/textures
 	cp liveamp $(DESTDIR)/$(INSTALLDIR)
 	mkdir -p $(DESTDIR)/usr/bin
 	ln -T $(DESTDIR)/$(INSTALLDIR)/liveamp $(DESTDIR)/usr/bin/liveamp
