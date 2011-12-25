@@ -2,6 +2,6 @@
 #This'll play a flashing, walking human for you if you replace desktop with it!
 
 anim idle 1fps {
-	textures/human/human_walk000.png
-	textures/human/human_walk001.png
+	textures/human_walk000.png
+	textures/human_walk001.png
 }
