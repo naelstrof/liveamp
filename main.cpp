@@ -304,8 +304,9 @@ int main(int argc, char *argv[])
 	NTexture::Texture DesktopTexture("textures/desktop");
 	if (!DesktopTexture.Valid)
 	{
-		std::cout << "Failed to load file textures/desktop! Make sure it exists!\n";
-		glfwTerminate();
+		char WorkingDirectory[32];
+		getcwd(WorkingDirectory,32);
+		std::cout << "Failed to load file " << WorkingDirectory << "textures/desktop! Try reinstalling or deleting the config folder!\n";
 		return 1;
 	}
 	ProgramID = LoadShaders("shaders/flat.vert", "shaders/flat.frag");
