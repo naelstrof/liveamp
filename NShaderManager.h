@@ -8,6 +8,6 @@
 #include <vector>
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
-GLuint LoadShaders(const char* VertexFilePath,const char* FragmentFilePath);
+GLuint LoadShaders(const char* VertexFilePath,const char* FragmentFilePath, bool* Result);
 
 #endif

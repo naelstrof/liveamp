@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
 {
 	//Check if operating files exist, if not copy them from default install {
 	struct stat st;
-	char* buffer = new char[128];
-	char* buffer2 = new char[128];
-	char* buffer3 = new char[128];
+	char buffer[128];
+	char buffer2[128];
+	char buffer3[128];
 	char* confhome = getenv("XDG_CONFIG_HOME");
 	strcpy(buffer,confhome);
 	strcat(buffer,"/liveamp");
@@ -131,24 +131,21 @@ int main(int argc, char *argv[])
 		std::cout << buffer << " is missing, copying from base install.\n";
 		strcpy(buffer2,"mkdir -p ");
 		strcat(buffer2,buffer);
-		system(buffer2);
+		system(buffer2); //mkdir -p $XDG_CONFIG_HOME/liveamp
 		strcpy(buffer2,"cp -R");
 		strcat(buffer2," /opt/liveamp/*s ");
 		strcpy(buffer3,confhome);
 		strcat(buffer3,"/liveamp");
 		strcat(buffer2,buffer3);
-		system(buffer2);
+		system(buffer2); //cp -R /opt/liveamp/*s $XDG_CONFIG_HOME/liveamp
 	}
-	if (stat(buffer,&st))
+	if (stat(buffer,&st)) //check to make sure it actually copied
 	{
 		std::cout << "Failed to create " << buffer << ", reverting to base install files.\n";
 		chdir("/opt/liveamp");
 	} else {
 		chdir(buffer);
 	}
-	delete[] buffer;
-	delete[] buffer2;
-	delete[] buffer3;
 	//}
 	bool window = true;
 	//Read and execute arguments {
@@ -261,6 +258,8 @@ int main(int argc, char *argv[])
 	
 	win = XCreateWindow(dpy, root, 0, 0, Width, Height, 0, vi->depth, InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
 	XMapWindow(dpy, win);
+	Atom wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+	XSetWMProtocols(dpy, win, &wmDeleteMessage, 1);
 	if (!window) //If we're running as desktop's wallpaper, disable input, persist on all workspaces, and disable visibility on taskbars.
 	{
 		std::cout << "Attempting to run as a desktop wallpaper.\n";
@@ -304,7 +303,13 @@ int main(int argc, char *argv[])
 		std::cout << "Failed to load file " << WorkingDirectory << "textures/desktop! Try reinstalling or deleting the config folder!\n";
 		return 1;
 	}
-	ProgramID = LoadShaders("shaders/flat.vert", "shaders/flat.frag");
+	bool Result;
+	ProgramID = LoadShaders("shaders/flat.vert", "shaders/flat.frag", &Result);
+	if (!Result)
+	{
+		std::cout << "There was an error with one of your shader files! Check the errors above and fix them!\n";
+		std::cout << "If you're not trying to edit the shader files, your drivers or graphics card may not support programmable pipeline.\n";
+	}
 	ColorID = glGetUniformLocation(ProgramID, "Color");
 	AmpID = glGetUniformLocation(ProgramID, "Amp");
 	UniformID = glGetUniformLocation(ProgramID, "TextureSampler");
@@ -344,6 +349,16 @@ int main(int argc, char *argv[])
 		if (window)
 		{
 			XEvent xev;
+			XCheckTypedEvent(dpy, ClientMessage, &xev);
+			if(xev.xclient.data.l[0] == wmDeleteMessage)
+			{
+				std::cout << "X window was closed, exiting...\n" << std::flush;
+				glXMakeCurrent(dpy, None, NULL);
+				glXDestroyContext(dpy, glc);
+				XDestroyWindow(dpy, win);
+				XCloseDisplay(dpy);
+				return 0;
+			}
 			XCheckTypedEvent(dpy, KeyPress, &xev);
 			if(xev.type == KeyPress) {
 				if (xev.xkey.keycode == 9 || xev.xkey.keycode == 24) {

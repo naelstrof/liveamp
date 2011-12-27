@@ -3,7 +3,6 @@
 GLuint NTexture::Texture::LoadPngImage(const char* name) //Shamelessly stolen from a random website explaining how to use libpng
 {
 	//Check to make sure png isn't already loaded
-	
 	for (unsigned int i=0;i<TextureNames.size();i++)
 	{
 		if (!strcmp(TextureNames[i],name))
