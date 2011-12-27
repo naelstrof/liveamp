@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 
 	//Initgraphics {
 	glClearColor(0.392156863,0.584313725,0.929411765,0.0);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	float Verticies[] = {
 		0,0,
 		Width,0,
@@ -257,20 +257,27 @@ int main(int argc, char *argv[])
 	{
 		std::cout << "There was an error with one of your shader files! Check the errors above and fix them!\n";
 		std::cout << "If you're not trying to edit the shader files, your drivers or graphics card may not support programmable pipeline!\n";
+		std::cout << "Reverting to fixed function pipeline...\n";
+		glViewport(0,0,Width,Height);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0, 1, 1, 0, 0, 1);
+		glMatrixMode(GL_MODELVIEW);
+	} else {
+		ColorID = glGetUniformLocation(ProgramID, "Color");
+		AmpID = glGetUniformLocation(ProgramID, "Amp");
+		UniformID = glGetUniformLocation(ProgramID, "TextureSampler");
+		WidthSize = glGetUniformLocation(ProgramID, "ScreenWidth");
+		HeightSize = glGetUniformLocation(ProgramID, "ScreenHeight");
+		
+		glGenBuffers(1,&VertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
+		glBufferData(GL_ARRAY_BUFFER, 48, Verticies, GL_STATIC_DRAW);
+		
+		glGenBuffers(1,&UVBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, UVBuffer);
+		glBufferData(GL_ARRAY_BUFFER, 48, UVs, GL_STATIC_DRAW);
 	}
-	ColorID = glGetUniformLocation(ProgramID, "Color");
-	AmpID = glGetUniformLocation(ProgramID, "Amp");
-	UniformID = glGetUniformLocation(ProgramID, "TextureSampler");
-	WidthSize = glGetUniformLocation(ProgramID, "ScreenWidth");
-	HeightSize = glGetUniformLocation(ProgramID, "ScreenHeight");
-	
-	glGenBuffers(1,&VertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, 48, Verticies, GL_STATIC_DRAW);
-	
-	glGenBuffers(1,&UVBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, UVBuffer);
-	glBufferData(GL_ARRAY_BUFFER, 48, UVs, GL_STATIC_DRAW);
 	
 	//}
 	
@@ -311,17 +318,20 @@ int main(int argc, char *argv[])
 			//Resize the window properly when resized
 			if (Win.ChangedSize(&Width,&Height))
 			{
-				float Verticies[] = {
-					0,0,
-					Width,0,
-					Width,Height,
-					Width,Height,
-					0,Height,
-					0,0};
-				glDeleteBuffers(1,&VertexBuffer);
-				glGenBuffers(1,&VertexBuffer);
-				glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
-				glBufferData(GL_ARRAY_BUFFER, 48, Verticies, GL_STATIC_DRAW);
+				if (Result)
+				{
+					float Verticies[] = {
+						0,0,
+						Width,0,
+						Width,Height,
+						Width,Height,
+						0,Height,
+						0,0};
+					glDeleteBuffers(1,&VertexBuffer);
+					glGenBuffers(1,&VertexBuffer);
+					glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
+					glBufferData(GL_ARRAY_BUFFER, 48, Verticies, GL_STATIC_DRAW);
+				}
 				glViewport(0,0,Width,Height);
 			}
 		}
@@ -332,7 +342,27 @@ int main(int argc, char *argv[])
 		float RColor = fabs(sin((PI+Time)/PI));
 		float GColor = fabs(sin(Time/PI));
 		float BColor = fabs(sin((2*PI+Time)/PI));
-		DrawFullscreenQuad(DesktopTexture,Listener.GetAmp(),RColor,GColor,BColor);
+		float AMP = Listener.GetAmp();
+		if (Result) //If we have a working programmable pipeline, use DrawFullscreenQuad. Otherwise use fixed function pipeline
+		{
+			DrawFullscreenQuad(DesktopTexture,AMP,RColor,GColor,BColor);
+		} else {
+			//glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_SRC_COLOR);
+			glEnable(GL_BLEND);
+			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			DesktopTexture.Apply();
+			glBegin(GL_QUADS);
+				glColor3f(0.2+AMP,0.2+AMP,0.2+AMP);
+				glVertex2f(0,0);
+				glTexCoord2d(0.0,0.0);
+				glVertex2f(1,0);
+				glTexCoord2d(1.0,0.0);
+				glVertex2f(1,1);
+				glTexCoord2d(1.0,1.0);
+				glVertex2f(0,1);
+				glTexCoord2d(0.0,1.0);
+			glEnd();
+		}
 		Win.SwapBuffer();
 		//}
 		//Cap fps at 60 {
