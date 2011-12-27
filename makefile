@@ -2,8 +2,8 @@ DESTDIR=
 INSTALLDIR=opt/liveamp
 all: liveamp
 
-liveamp: main.o NPulse.o NShaderManager.o NTexture.o
-	g++ main.o NPulse.o NShaderManager.o NTexture.o -o liveamp -lpulse-simple -lpulse -lGL -lpng -lX11 -lXext
+liveamp: main.o NPulse.o NShaderManager.o NTexture.o NWindow.o
+	g++ main.o NPulse.o NShaderManager.o NTexture.o NWindow.o -o liveamp -lpulse-simple -lpulse -lGL -lpng -lX11 -lXext
 	
 main.o: main.cpp
 	g++ -Wall -c main.cpp
@@ -16,6 +16,9 @@ NShaderManager.o: NShaderManager.h NShaderManager.cpp
 
 NTexture.o: NTexture.h NTexture.cpp
 	g++ -Wall -c NTexture.cpp
+
+NWindow.o: NWindow.h NWindow.cpp
+	g++ -Wall -c NWindow.cpp
 	
 install: shaders/flat.frag shaders/flat.vert textures/desktop textures/desktop.png liveamp
 	echo "Installing to $(DESTDIR)/$(INSTALLDIR)..."
