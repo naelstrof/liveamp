@@ -27,6 +27,7 @@ NPulse::NPulse()
 		return;
 	}
 	std::cout << "Successfully connected to sound server.\n";
+	Buffer = new short[MAX_BUFFER];
 	Connected = true;
 }
 
@@ -34,6 +35,7 @@ NPulse::~NPulse()
 {
 	if (Connected)
 	{
+		delete[] Buffer;
 		pa_simple_free(SoundSocket);
 	}
 }
@@ -47,7 +49,6 @@ int NPulse::PrintVersion()
 float NPulse::GetAmp()
 {
 	int error = 0;
-	short* Buffer = new short[MAX_BUFFER];
 	pa_simple_read(SoundSocket, Buffer, MAX_BUFFER, &error);
 	BufferSize = MAX_BUFFER;
 	if (error != 0)
@@ -56,31 +57,17 @@ float NPulse::GetAmp()
 		std::cout << "Trying to continue anyway...\n";
 	}
 	float Amp = 0;
-	float Temp;
 	unsigned int i;
-	unsigned int ZeroCount = 0;
-	for (i=0;i<BufferSize && ZeroCount < 3;i+=QUALITY)
+	for (i=0;i<BufferSize;i+=QUALITY)
 	{
-		Temp = stof(Buffer,i);
-		if (Temp == 0)
-		{
-			ZeroCount++;
-		} else {
-			Amp += stof(Buffer,i);
-		}
+		Amp += stof(Buffer,i);
 	}
 	Amp/=i;
 	Amp*=150;
-	delete[] Buffer;
 	return Amp;
 }
 
 float NPulse::stof(short* Buffer, unsigned int Finder)
 {
-	//short Amp;
-	//memcpy(&Amp,&Buffer[Finder],1);
-	//Amp<<=8;
-	//memcpy(&Amp,&Buffer[Finder+1],1);
-	//return (float)abs(Amp)/32767.f;
 	return float(abs(Buffer[Finder]))/(float)SHRT_MAX;
 }

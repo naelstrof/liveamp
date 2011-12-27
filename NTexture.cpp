@@ -1,6 +1,6 @@
 #include "NTexture.h"
 
-GLuint NTexture::Texture::LoadPngImage(const char* name)
+GLuint NTexture::Texture::LoadPngImage(const char* name) //Shamelessly stolen from a random website explaining how to use libpng
 {
 	//Check to make sure png isn't already loaded
 	
@@ -70,7 +70,7 @@ GLuint NTexture::Texture::LoadPngImage(const char* name)
             return -1;
     }
     unsigned int row_bytes = png_get_rowbytes(png_ptr, info_ptr);
-    GLubyte* textureImage = (unsigned char*)malloc(row_bytes * Height);
+    GLubyte* textureImage = new unsigned char[row_bytes * Height];
 
     png_bytepp row_pointers = png_get_rows(png_ptr, info_ptr);
 
@@ -101,6 +101,7 @@ GLuint NTexture::Texture::LoadPngImage(const char* name)
 	strcpy(myName,name);
 	TextureNames.push_back(myName);
 	TextureIDs.push_back(texture);
+	delete[] textureImage;
     return texture;
 }
 
@@ -219,7 +220,9 @@ NTexture::Texture::Texture(const char* name)
 			Static = true;
 			Textures.push_back(*this);
 			Lines.clear();
-			//std::cout << "Loaded texture " << name << " as a static image!\n";
+			if (Verbose) {
+				std::cout << "Loaded texture " << name << " as a static image!\n";
+			}
 			return;
 		}
 	}
@@ -248,7 +251,7 @@ int NTexture::Texture::Play(const char* name)
 			return 0;
 		}
 	}
-	std::cout << "Couldn't find animation " << name << " in texture a texture!\n";
+	std::cout << "Couldn't find animation " << name << " in a texture!\n";
 	return 1;
 }
 

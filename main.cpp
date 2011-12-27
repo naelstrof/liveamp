@@ -120,15 +120,15 @@ int main(int argc, char *argv[])
 {
 	//Check if operating files exist, if not copy them from default install {
 	struct stat st;
-	char buffer[128];
+	char* buffer = new char[128];
+	char* buffer2 = new char[128];
+	char* buffer3 = new char[128];
 	char* confhome = getenv("XDG_CONFIG_HOME");
 	strcpy(buffer,confhome);
 	strcat(buffer,"/liveamp");
 	if (stat(buffer,&st))
 	{//ughgh this is ugly, but c string management sucks and i don't want to spend time to learn and import <string>.
 		std::cout << buffer << " is missing, copying from base install.\n";
-		char buffer2[128];
-		char buffer3[128];
 		strcpy(buffer2,"mkdir -p ");
 		strcat(buffer2,buffer);
 		system(buffer2);
@@ -146,6 +146,9 @@ int main(int argc, char *argv[])
 	} else {
 		chdir(buffer);
 	}
+	delete[] buffer;
+	delete[] buffer2;
+	delete[] buffer3;
 	//}
 	bool window = true;
 	//Read and execute arguments {
@@ -232,7 +235,7 @@ int main(int argc, char *argv[])
 	dpy = XOpenDisplay(NULL);
 
 	if ( !dpy ) {
-		printf("Cannot connect to X server!\n");
+		std::cout << "Cannot connect to X server!\n";
 		return 1;
 	}
 	Window root = DefaultRootWindow(dpy);
@@ -249,7 +252,7 @@ int main(int argc, char *argv[])
 	vi = glXChooseVisual(dpy, 0, att);
 
 	if (!vi) {
-		printf("No appropriate visual found!\n");
+		std::cout << "No appropriate visual found!\n";
 		return 1;
 	}
 	cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);

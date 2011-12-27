@@ -12,7 +12,7 @@
 
 namespace NTexture
 {
-	static bool Verbose = false;
+	static bool Verbose = true;
 
 	static std::vector<char*> TextureNames;
 	static std::vector<GLuint> TextureIDs;

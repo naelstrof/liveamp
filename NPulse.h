@@ -16,6 +16,7 @@ public:
 	bool Connected;
 	float GetAmp();
 	int PrintVersion();
+	short* Buffer;
 private:
 	unsigned int BufferSize;
 	pa_simple* SoundSocket;
