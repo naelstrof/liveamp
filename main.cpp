@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
 		}
 		if (strcmp(argv[i],"--h") == 0 || strcmp(argv[i],"--help") == 0)
 		{
-			std::cout << "liveamp Version: 1\n\nUsage: liveamp [-w WIDTH] [-h HEIGHT] [-hz REFRESHRATE] [-desktop] [-d] [--h] [--help]\n\n";
+			std::cout << "liveamp Version: 3\n\nUsage: liveamp [-w WIDTH] [-h HEIGHT] [-hz REFRESHRATE] [-desktop] [-d] [--h] [--help]\n\n";
 			std::cout << "Options:\n";
 			std::cout << "\t-h\t\t- Window Height (-h 1920)\n";
 			std::cout << "\t-w\t\t- Window Width (-h 1080)\n";
