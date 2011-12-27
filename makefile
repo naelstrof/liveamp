@@ -3,7 +3,7 @@ INSTALLDIR=opt/liveamp
 all: liveamp
 
 liveamp: main.o NPulse.o NShaderManager.o NTexture.o
-	g++ main.o NPulse.o NShaderManager.o NTexture.o -o liveamp -lpulse-simple -lpulse -lglfw -lGLEW -lGL -lpng -lX11 -lXext
+	g++ main.o NPulse.o NShaderManager.o NTexture.o -o liveamp -lpulse-simple -lpulse -lGL -lpng -lX11 -lXext
 	
 main.o: main.cpp
 	g++ -Wall -c main.cpp
