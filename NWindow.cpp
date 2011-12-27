@@ -130,7 +130,16 @@ unsigned int NWindow::GetKey()
 int NWindow::CheckClosed()
 {
 	XEvent xev;
-	XCheckTypedEvent(dpy, ClientMessage, &xev);
+	for (unsigned int i=0;i<30;i++) //Usually the X server will send more notifications than the program can handle, this is a workaround.
+	{
+		XCheckTypedEvent(dpy, ClientMessage, &xev);
+		if(xev.type == ClientMessage && xev.xclient.data.l[0] != wmDeleteMessage)
+		{
+			continue;
+		} else {
+			break;
+		}
+	}
 	if(xev.xclient.data.l[0] == wmDeleteMessage)
 	{
 		Close();
