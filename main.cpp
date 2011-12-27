@@ -22,21 +22,22 @@
 
 #include <iostream>
 #include <time.h>
-#include <GL/glew.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/stat.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glx.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
-#include <unistd.h>
-#include <signal.h>
 #include <X11/extensions/shape.h>
 #include <X11/extensions/Xrender.h>
-#include <GL/gl.h>
-#include <GL/glx.h>
-#include <GL/glfw.h>
+
 #include "NPulse.h"
 #include "NShaderManager.h"
 #include "NTexture.h"
-#include <sys/stat.h>
 
 #define PI 3.14159265
 
@@ -99,11 +100,11 @@ int DrawFullscreenQuad(NTexture::Texture texture, float Amp, float r, float g, f
 }
 
 static int fps;
-static float t1;
 static timespec WaitTime, RememberTime;
 Display *dpy;
 Window win = 0;
 GLXContext glc;
+timeval oldtime, newtime;
 
 void sighandler(int signum)
 {
@@ -221,11 +222,7 @@ int main(int argc, char *argv[])
 	//}
 	std::cout << "Created by Naelstrof <naelstrof@gmail.com> with indirect help from David Reveman <davidr@novell.com>.\n";
 	//Initwindow {
-	if (!glfwInit()) //glfw for accurate timer, i'll try to remove it later as it's really bloated for just being a timer.
-	{
-		fprintf(stderr,"Failed to initialize GLFW!\n");
-		return -1;
-	}
+	gettimeofday(&oldtime, NULL);
 	GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
 	XVisualInfo *vi;
 	Colormap cmap;
@@ -285,11 +282,6 @@ int main(int argc, char *argv[])
 	XStoreName(dpy, win, "liveamp");
 	glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
 	glXMakeCurrent(dpy, win, glc);
-	if (glewInit() != GLEW_OK)
-	{
-		std::cout << "Failed to initialize GLEW!\n";
-		return 1;
-	}
 	glClearColor(0.392156863,0.584313725,0.929411765,0.0);
 	glEnable(GL_CULL_FACE);
 	//}
@@ -330,7 +322,6 @@ int main(int argc, char *argv[])
 	NPulse Listener;
 	WaitTime.tv_sec = 0;
 	WaitTime.tv_nsec = 11000000;
-	t1 = glfwGetTime();
 	// }
 	
 	//loop {
@@ -343,6 +334,9 @@ int main(int argc, char *argv[])
 	while(Running)
 	{
 		nanosleep(&WaitTime, &RememberTime);
+		gettimeofday(&newtime, NULL);
+		double ElapsedTime = (newtime.tv_sec - oldtime.tv_sec) * 1000.0;
+		ElapsedTime += (newtime.tv_usec - oldtime.tv_usec) / 1000.0;
 		//Check events for window resize or keypresses, but only if we're not running as a desktop wallpaper {
 		if (window)
 		{
@@ -381,7 +375,7 @@ int main(int argc, char *argv[])
 		//}
 		//Draw screen {
 		glClear(GL_COLOR_BUFFER_BIT); //only needed for transparent images.
-		float Time = glfwGetTime();
+		float Time = ElapsedTime/1000.f;
 		float RColor = fabs(sin((PI+Time)/PI));
 		float GColor = fabs(sin(Time/PI));
 		float BColor = fabs(sin((2*PI+Time)/PI));
@@ -390,7 +384,7 @@ int main(int argc, char *argv[])
 		//}
 		//Cap fps at 60 {
 		fps++;
-		if (glfwGetTime()-t1>1.f)
+		if (ElapsedTime>1000.f)
 		{
 			float FrameTime = 1000.f/float(fps);
 			SleepStep=(1000.f/MaxFPS-(FrameTime-SleepStep));
@@ -400,7 +394,7 @@ int main(int argc, char *argv[])
 			}
 			WaitTime.tv_nsec = SleepStep*1000000L;
 			fps = 0;
-			t1 = glfwGetTime();
+			gettimeofday(&oldtime, NULL);
 		}
 		//}
 	}

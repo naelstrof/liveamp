@@ -142,7 +142,7 @@ NTexture::Texture::Texture()
 NTexture::Texture::Texture(const char* name)
 {
 	Valid = true;
-	StartTime = glfwGetTime();
+	gettimeofday(&StartTime, NULL);
 	AnimationID = 0;
 	for (unsigned int i=0;i<Textures.size();i++)
 	{
@@ -244,7 +244,7 @@ int NTexture::Texture::Play(const char* name)
 		if (!strcmp(name,Animations[i].Name))
 		{
 			AnimationID = i;
-			StartTime = glfwGetTime();
+			gettimeofday(&StartTime, NULL);
 			return 0;
 		}
 	}
@@ -259,7 +259,11 @@ int NTexture::Texture::Apply()
 	{
 		glBindTexture(GL_TEXTURE_2D, TextureID);
 	} else {
-		Frame = floor((StartTime-glfwGetTime())*Animations[AnimationID].GetFPS());
+		timeval newtime;
+		gettimeofday(&newtime, NULL);
+		double ElapsedTime = (newtime.tv_sec - StartTime.tv_sec) * 1000.0;
+		ElapsedTime += (newtime.tv_usec - StartTime.tv_usec) / 1000.0;
+		Frame = floor((ElapsedTime/1000.f)*Animations[AnimationID].GetFPS());
 		Frame %= (Animations[AnimationID].ImageCount);
 		glBindTexture(GL_TEXTURE_2D, Animations[AnimationID].Images[Frame]);
 	}

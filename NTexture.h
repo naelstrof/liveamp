@@ -4,10 +4,11 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
-#include <GL/glew.h>
-#include <GL/glfw.h>
 #include <fstream>
 #include <cmath>
+#include <sys/time.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
 
 namespace NTexture
 {
@@ -41,7 +42,7 @@ namespace NTexture
 		unsigned int ID;
 		unsigned int AnimationID;
 		GLuint LoadPngImage(const char*);
-		float StartTime;
+		timeval StartTime;
 	public:
 		bool Static;
 		bool Valid;

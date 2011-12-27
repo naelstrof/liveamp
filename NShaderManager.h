@@ -6,8 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <GL/glew.h>
-#include <GL/glfw.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
 GLuint LoadShaders(const char* VertexFilePath,const char* FragmentFilePath);
 
 #endif
