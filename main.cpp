@@ -54,6 +54,9 @@ static GLuint AmpID;
 static unsigned int Width = 0;
 static unsigned int Height = 0;
 static unsigned int MaxFPS = 60;
+static int fps;
+static timespec WaitTime, RememberTime;
+timeval oldtime, newtime;
 
 int DrawFullscreenQuad(NTexture::Texture texture, float Amp, float r, float g, float b)
 {
@@ -83,19 +86,15 @@ int DrawFullscreenQuad(NTexture::Texture texture, float Amp, float r, float g, f
 	return 0;
 }
 
-static int fps;
-static timespec WaitTime, RememberTime;
-timeval oldtime, newtime;
-
 void sighandler(int signum)
 {
 	std::cout << "Recieved signal " << signum << ", exiting...\n";
     exit(0);
 }
 
-int main(int argc, char *argv[])
+int CheckFiles()
 {
-	//Check if operating files exist, if not copy them from default install {
+	//Check if operating files exist, if not copy them from default install
 	struct stat st;
 	char buffer[128];
 	char buffer2[128];
@@ -120,17 +119,21 @@ int main(int argc, char *argv[])
 	{
 		std::cout << "Failed to create " << buffer << ", reverting to base install files.\n";
 		chdir("/opt/liveamp");
+		return 1;
 	} else {
 		chdir(buffer);
 	}
-	//}
-	bool Desktop = false;
-	//Read and execute arguments {
+	return 0;
+}
+
+int ReadArguments(int argc, char** argv, bool* Desktop, unsigned int* Width, unsigned int* Height, unsigned int* MaxFPS)
+{
+	//Read and execute arguments
 	for (int i=0;i<argc;i++)
 	{
 		if (strcmp(argv[i],"-desktop") == 0 || strcmp(argv[i],"-d") == 0)
 		{
-			Desktop = true;
+			*Desktop = true;
 		}
 		if (strcmp(argv[i],"-w") == 0)
 		{
@@ -138,13 +141,13 @@ int main(int argc, char *argv[])
 			if (i>argc)
 			{
 				std::cout << "Incorrect use of -w! Use --help for more info\n";
-				return 0;
+				exit(0);
 			}
-			Width = atoi(argv[i]);
-			if (Width<1)
+			*Width = atoi(argv[i]);
+			if (*Width<1)
 			{
-				std::cout << "Height is too low, clamping at 1...\n";
-				MaxFPS = 1;
+				std::cout << "Width is too low, clamping at 1...\n";
+				*Width = 1;
 			}
 		}
 		if (strcmp(argv[i],"-h") == 0)
@@ -153,13 +156,13 @@ int main(int argc, char *argv[])
 			if (i>=argc)
 			{
 				std::cout << "Incorrect use of -h! Use --help for more info\n";
-				return 0;
+				exit(0);
 			}
-			Height = atoi(argv[i]);
-			if (Height<1)
+			*Height = atoi(argv[i]);
+			if (*Height<1)
 			{
 				std::cout << "Height is too low, clamping at 1...\n";
-				MaxFPS = 1;
+				*Height = 1;
 			}
 		}
 		if (strcmp(argv[i],"-hz") == 0)
@@ -168,17 +171,21 @@ int main(int argc, char *argv[])
 			if (i>=argc)
 			{
 				std::cout << "Incorrect use of -hz! Use --help for more info\n";
-				return 0;
+				exit(0);
 			}
-			MaxFPS = atoi(argv[i]);
-			if (MaxFPS<1)
+			*MaxFPS = atoi(argv[i]);
+			if (*MaxFPS<1)
 			{
 				std::cout << "hz is too low, clamping at 1...\n";
-				MaxFPS = 1;
+				*MaxFPS = 1;
 			}
 		}
 		if (strcmp(argv[i],"--h") == 0 || strcmp(argv[i],"--help") == 0)
 		{
+			char buffer[128];
+			char* confhome = getenv("XDG_CONFIG_HOME");
+			strcpy(buffer,confhome);
+			strcat(buffer,"/liveamp");
 			std::cout << "liveamp Version: 3\n\nUsage: liveamp [-w WIDTH] [-h HEIGHT] [-hz REFRESHRATE] [-desktop] [-d] [--h] [--help]\n\n";
 			std::cout << "Options:\n";
 			std::cout << "\t-h\t\t- Window Height (-h 1920)\n";
@@ -193,11 +200,22 @@ int main(int argc, char *argv[])
 			std::cout << "There's also a way to make liveamp play a series of images as an animation, which an example file is included. ";
 			std::cout << "If you mess up your configuration files, just delete the whole liveamp config folder and restart the program to get a fresh copy. ";
 			std::cout << "\nMake sure to contact naelstrof@gmail.com to report bugs and request features!\n";
-			return 0;
+			exit(0);
 		}
 	}
-	//}
+	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	for (int i=1;i<=15;i++) //intercept ALL signals and exit on all of them.
+	{
+		signal(i, sighandler);
+	}
 	std::cout << "Created by Naelstrof <naelstrof@gmail.com> with indirect help from David Reveman <davidr@novell.com>.\n";
+	CheckFiles();
+	bool Desktop = false;
+	ReadArguments(argc,argv,&Desktop,&Width,&Height,&MaxFPS);
 	//Initwindow {
 	NWindow Win(&Width,&Height,"liveamp",Desktop,argc,argv);
 	if (!Win.Valid)
@@ -228,8 +246,8 @@ int main(int argc, char *argv[])
 	NTexture::Texture DesktopTexture("textures/desktop");
 	if (!DesktopTexture.Valid)
 	{
-		char WorkingDirectory[32];
-		getcwd(WorkingDirectory,32);
+		char WorkingDirectory[128];
+		getcwd(WorkingDirectory,128);
 		std::cout << "Failed to load file " << WorkingDirectory << "textures/desktop! Try reinstalling or deleting the config folder!\n";
 		return 1;
 	}
@@ -238,7 +256,7 @@ int main(int argc, char *argv[])
 	if (!Result)
 	{
 		std::cout << "There was an error with one of your shader files! Check the errors above and fix them!\n";
-		std::cout << "If you're not trying to edit the shader files, your drivers or graphics card may not support programmable pipeline.\n";
+		std::cout << "If you're not trying to edit the shader files, your drivers or graphics card may not support programmable pipeline!\n";
 	}
 	ColorID = glGetUniformLocation(ProgramID, "Color");
 	AmpID = glGetUniformLocation(ProgramID, "Amp");
@@ -258,17 +276,15 @@ int main(int argc, char *argv[])
 	
 	//Initsoundsink { 
 	NPulse Listener;
-	WaitTime.tv_sec = 0;
-	WaitTime.tv_nsec = 11000000;
 	// }
 	
 	//loop {
-	gettimeofday(&oldtime, NULL);
-	for (int i=1;i<=15;i++) //intercept ALL signals and exit on all of them.
-	{
-		signal(i, sighandler);
-	}
+	//these are all used to cap the application's FPS {
 	float SleepStep = 0;
+	WaitTime.tv_sec = 0;
+	WaitTime.tv_nsec = 11000000;
+	gettimeofday(&oldtime, NULL);
+	//}
 	bool Running = true;
 	while(Running)
 	{
