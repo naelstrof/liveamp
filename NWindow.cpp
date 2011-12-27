@@ -95,7 +95,7 @@ bool NWindow::ChangedSize(unsigned int* Width, unsigned int* Height)
 {
 	XEvent xev;
 	XEvent xevmem;
-	for (unsigned int i=0;i<30;i++) //Usually the X server will send more notifications than the program can handle, this is a workaround.
+	while (true) //Usually the X server will send more notifications than the program can handle, this is a workaround.
 	{
 		XCheckTypedEvent(dpy, ConfigureNotify, &xev);
 		if (xev.type == ConfigureNotify)
@@ -130,7 +130,7 @@ unsigned int NWindow::GetKey()
 int NWindow::CheckClosed()
 {
 	XEvent xev;
-	for (unsigned int i=0;i<30;i++) //Usually the X server will send more notifications than the program can handle, this is a workaround.
+	while(true) //Usually the X server will send more notifications than the program can handle, this is a workaround.
 	{
 		XCheckTypedEvent(dpy, ClientMessage, &xev);
 		if(xev.type == ClientMessage && xev.xclient.data.l[0] != wmDeleteMessage)
