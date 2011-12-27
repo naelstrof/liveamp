@@ -38,6 +38,7 @@
 #include "NPulse.h"
 #include "NShaderManager.h"
 #include "NTexture.h"
+#include "NWindow.h"
 
 #define PI 3.14159265
 
@@ -53,23 +54,6 @@ static GLuint AmpID;
 static unsigned int Width = 0;
 static unsigned int Height = 0;
 static unsigned int MaxFPS = 60;
-
-float Verticies[] = {
-	0,0,
-	Width,0,
-	Width,Height,
-	Width,Height,
-	0,Height,
-	0,0};
-
-
-float UVs[] = {
-	0,0,
-	1,0,
-	1,1,
-	1,1,
-	0,1,
-	0,0};
 
 int DrawFullscreenQuad(NTexture::Texture texture, float Amp, float r, float g, float b)
 {
@@ -101,18 +85,11 @@ int DrawFullscreenQuad(NTexture::Texture texture, float Amp, float r, float g, f
 
 static int fps;
 static timespec WaitTime, RememberTime;
-Display *dpy;
-Window win = 0;
-GLXContext glc;
 timeval oldtime, newtime;
 
 void sighandler(int signum)
 {
 	std::cout << "Recieved signal " << signum << ", exiting...\n";
-	glXMakeCurrent(dpy, None, NULL);
-	glXDestroyContext(dpy, glc);
-	XDestroyWindow(dpy, win);
-	XCloseDisplay(dpy);
     exit(0);
 }
 
@@ -147,13 +124,13 @@ int main(int argc, char *argv[])
 		chdir(buffer);
 	}
 	//}
-	bool window = true;
+	bool Desktop = false;
 	//Read and execute arguments {
 	for (int i=0;i<argc;i++)
 	{
 		if (strcmp(argv[i],"-desktop") == 0 || strcmp(argv[i],"-d") == 0)
 		{
-			window = false;
+			Desktop = true;
 		}
 		if (strcmp(argv[i],"-w") == 0)
 		{
@@ -222,79 +199,32 @@ int main(int argc, char *argv[])
 	//}
 	std::cout << "Created by Naelstrof <naelstrof@gmail.com> with indirect help from David Reveman <davidr@novell.com>.\n";
 	//Initwindow {
-	gettimeofday(&oldtime, NULL);
-	GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-	XVisualInfo *vi;
-	Colormap cmap;
-	XSetWindowAttributes swa;
-	XWMHints xwmh;
-
-	dpy = XOpenDisplay(NULL);
-
-	if ( !dpy ) {
-		std::cout << "Cannot connect to X server!\n";
+	NWindow Win(&Width,&Height,"liveamp",Desktop,argc,argv);
+	if (!Win.Valid)
+	{
+		std::cout << "Couldn't create X window! Not sure anything can be done about this...\n";
 		return 1;
 	}
-	Window root = DefaultRootWindow(dpy);
-	XWindowAttributes gwa;
-	XGetWindowAttributes(dpy, root, &gwa);
-	if (Width == 0)
-	{
-		Width = gwa.width;
-	}
-	if (Height == 0)
-	{
-		Height = gwa.height;
-	}
-	vi = glXChooseVisual(dpy, 0, att);
-
-	if (!vi) {
-		std::cout << "No appropriate visual found!\n";
-		return 1;
-	}
-	cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
-	swa.colormap = cmap;
-	swa.event_mask = ExposureMask | KeyPressMask;
-	
-	win = XCreateWindow(dpy, root, 0, 0, Width, Height, 0, vi->depth, InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
-	XMapWindow(dpy, win);
-	Atom wmDeleteMessage = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
-	XSetWMProtocols(dpy, win, &wmDeleteMessage, 1);
-	if (!window) //If we're running as desktop's wallpaper, disable input, persist on all workspaces, and disable visibility on taskbars.
-	{
-		std::cout << "Attempting to run as a desktop wallpaper.\n";
-		xwmh.flags = InputHint;
-		xwmh.input = 0;
-		XSetWMProperties(dpy,win,NULL,NULL,argv,argc, NULL, &xwmh, NULL);
-		Atom state[] = {XInternAtom(dpy, "_NET_WM_STATE_STICKY", 0),
-		XInternAtom(dpy, "_NET_WM_STATE_SKIP_TASKBAR", 0)};
-		XChangeProperty(dpy, win, XInternAtom (dpy, "_NET_WM_STATE", 0),
-			XA_ATOM, 32, PropModeReplace,
-			(unsigned char *)state, 2);
-		Region region;
-		region = XCreateRegion();
-		if (region)
-		{
-			XShapeCombineRegion (dpy, win, ShapeInput, 0, 0, region, ShapeSet);
-			XDestroyRegion (region);
-		} else {
-			std::cout << "Couldn't create XRegion! Trying to continue anyway...\n";
-		}
-	}
-	XStoreName(dpy, win, "liveamp");
-	glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
-	glXMakeCurrent(dpy, win, glc);
-	glClearColor(0.392156863,0.584313725,0.929411765,0.0);
-	glEnable(GL_CULL_FACE);
 	//}
 
 	//Initgraphics {
-	Verticies[2]=Width;
-	Verticies[4]=Width;
-	Verticies[6]=Width;
-	Verticies[5]=Height;
-	Verticies[7]=Height;
-	Verticies[9]=Height;
+	glClearColor(0.392156863,0.584313725,0.929411765,0.0);
+	glEnable(GL_CULL_FACE);
+	float Verticies[] = {
+		0,0,
+		Width,0,
+		Width,Height,
+		Width,Height,
+		0,Height,
+		0,0};
+
+	float UVs[] = {
+		0,0,
+		1,0,
+		1,1,
+		1,1,
+		0,1,
+		0,0};
 	NTexture::Texture DesktopTexture("textures/desktop");
 	if (!DesktopTexture.Valid)
 	{
@@ -333,7 +263,8 @@ int main(int argc, char *argv[])
 	// }
 	
 	//loop {
-	for (int i=1;i<=15;i++)
+	gettimeofday(&oldtime, NULL);
+	for (int i=1;i<=15;i++) //intercept ALL signals and exit on all of them.
 	{
 		signal(i, sighandler);
 	}
@@ -341,48 +272,36 @@ int main(int argc, char *argv[])
 	bool Running = true;
 	while(Running)
 	{
-		nanosleep(&WaitTime, &RememberTime);
 		gettimeofday(&newtime, NULL);
-		double ElapsedTime = (newtime.tv_sec - oldtime.tv_sec) * 1000.0;
+		double ElapsedTime = (newtime.tv_sec - oldtime.tv_sec) * 1000.0; //Get elapsed time
 		ElapsedTime += (newtime.tv_usec - oldtime.tv_usec) / 1000.0;
 		//Check events for window resize or keypresses, but only if we're not running as a desktop wallpaper {
-		if (window)
+		if (!Desktop)
 		{
-			XEvent xev;
-			XCheckTypedEvent(dpy, ClientMessage, &xev);
-			if(xev.xclient.data.l[0] == wmDeleteMessage)
+			//Exit if XWindow is closed
+			if (!Win.CheckClosed())
 			{
-				std::cout << "X window was closed, exiting...\n" << std::flush;
-				glXMakeCurrent(dpy, None, NULL);
-				glXDestroyContext(dpy, glc);
-				XDestroyWindow(dpy, win);
-				XCloseDisplay(dpy);
+				std::cout << "X window was closed, exiting...\n";
 				return 0;
 			}
-			XCheckTypedEvent(dpy, KeyPress, &xev);
-			if(xev.type == KeyPress) {
-				if (xev.xkey.keycode == 9 || xev.xkey.keycode == 24) {
-					std::cout << "Received keycode " << xev.xkey.keycode << ", exiting...\n";
-					glXMakeCurrent(dpy, None, NULL);
-					glXDestroyContext(dpy, glc);
-					XDestroyWindow(dpy, win);
-					XCloseDisplay(dpy);
-					return 0;
-				}
-			}
-			XCheckTypedEvent(dpy, Expose, &xev);
-			if (xev.type == Expose)
+			//Close if q or esc is pressed with the X window in focus
+			unsigned int Key = Win.GetKey();
+			if (Key == 9 || Key == 24)
 			{
-				XWindowAttributes gwa;
-				XGetWindowAttributes(dpy, win, &gwa);
-				Width = gwa.width;
-				Height = gwa.height;
-				Verticies[2]=Width;
-				Verticies[4]=Width;
-				Verticies[6]=Width;
-				Verticies[5]=Height;
-				Verticies[7]=Height;
-				Verticies[9]=Height;
+				std::cout << "Received keycode " << Key << ", exiting...\n";
+				Win.Close();
+				return 0;
+			}
+			//Resize the window properly when resized
+			if (Win.ChangedSize(&Width,&Height))
+			{
+				float Verticies[] = {
+					0,0,
+					Width,0,
+					Width,Height,
+					Width,Height,
+					0,Height,
+					0,0};
 				glDeleteBuffers(1,&VertexBuffer);
 				glGenBuffers(1,&VertexBuffer);
 				glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
@@ -398,9 +317,10 @@ int main(int argc, char *argv[])
 		float GColor = fabs(sin(Time/PI));
 		float BColor = fabs(sin((2*PI+Time)/PI));
 		DrawFullscreenQuad(DesktopTexture,Listener.GetAmp(),RColor,GColor,BColor);
-		glXSwapBuffers(dpy,win);
+		Win.SwapBuffer();
 		//}
 		//Cap fps at 60 {
+		nanosleep(&WaitTime, &RememberTime);
 		fps++;
 		if (ElapsedTime>1000.f)
 		{
