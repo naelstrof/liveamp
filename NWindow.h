@@ -23,7 +23,7 @@ public:
 	NWindow(unsigned int*, unsigned int*, const char*, bool, int, char**);
 	int SwapBuffer();
 	int Close();
-	int CheckClosed();
+	int Open();
 	bool ChangedSize(unsigned int*, unsigned int*);
 	unsigned int GetKey();
 };

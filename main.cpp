@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
 		if (!Desktop)
 		{
 			//Exit if XWindow is closed
-			if (!Win.CheckClosed())
+			if (!Win.Open())
 			{
 				std::cout << "X window was closed, exiting...\n";
 				return 0;

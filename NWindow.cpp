@@ -94,25 +94,17 @@ int NWindow::Close()
 bool NWindow::ChangedSize(unsigned int* Width, unsigned int* Height)
 {
 	XEvent xev;
-	XEvent xevmem;
-	while (true) //Usually the X server will send more notifications than the program can handle, this is a workaround.
+	bool Configured = false;
+	while(XCheckTypedEvent(dpy, ConfigureNotify, &xev)) //Usually the X server will send more notifications than the program can handle, this is a workaround.
 	{
-		XCheckTypedEvent(dpy, ConfigureNotify, &xev);
-		if (xev.type == ConfigureNotify)
-		{
-			xevmem = xev;
-			continue;
-		} else {
-			xev = xevmem;
-			break;
-		}
+		Configured = true;
 	}
-	if (xev.type == ConfigureNotify)
-		{
-		 XConfigureEvent xce = xev.xconfigure;
-		 *Width = xce.width;
-		 *Height = xce.height;
-		 return true;
+	if (Configured)
+	{
+		XConfigureEvent xce = xev.xconfigure;
+		*Width = xce.width;
+		*Height = xce.height;
+		return true;
 	}
 	return false;
 }
@@ -120,30 +112,23 @@ bool NWindow::ChangedSize(unsigned int* Width, unsigned int* Height)
 unsigned int NWindow::GetKey()
 {
 	XEvent xev;
-	XCheckTypedEvent(dpy, KeyPress, &xev);
-	if(xev.type == KeyPress) {
+	if (XCheckTypedEvent(dpy, KeyPress, &xev))
+	{
 		return xev.xkey.keycode;
 	}
 	return 0;
 }
 
-int NWindow::CheckClosed()
+int NWindow::Open()
 {
 	XEvent xev;
-	while(true) //Usually the X server will send more notifications than the program can handle, this is a workaround.
+	while(XCheckTypedEvent(dpy, ClientMessage, &xev)) //Usually the X server will send more notifications than the program can handle, this is a workaround.
 	{
-		XCheckTypedEvent(dpy, ClientMessage, &xev);
-		if(xev.type == ClientMessage && xev.xclient.data.l[0] != wmDeleteMessage)
+		if(xev.xclient.data.l[0] == wmDeleteMessage)
 		{
-			continue;
-		} else {
-			break;
+			Close();
+			return 0;
 		}
-	}
-	if(xev.xclient.data.l[0] == wmDeleteMessage)
-	{
-		Close();
-		return 0;
 	}
 	return 1;
 }
