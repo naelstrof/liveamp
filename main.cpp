@@ -56,7 +56,7 @@ static unsigned int Height = 0;
 static unsigned int MaxFPS = 60;
 static int fps;
 static timespec WaitTime, RememberTime;
-timeval oldtime, newtime;
+timeval oldtime, newtime, starttime;
 
 int DrawFullscreenQuad(NTexture::Texture texture, float Amp, float r, float g, float b)
 {
@@ -227,8 +227,8 @@ int main(int argc, char *argv[])
 	//}
 
 	//Initgraphics {
-	glClearColor(0.392156863,0.584313725,0.929411765,0.0);
-	//glEnable(GL_CULL_FACE);
+	glClearColor(1,1,1,0.0);
+	glEnable(GL_CULL_FACE);
 	float Verticies[] = {
 		0,0,
 		Width,0,
@@ -292,6 +292,7 @@ int main(int argc, char *argv[])
 	WaitTime.tv_sec = 0;
 	WaitTime.tv_nsec = 11000000;
 	gettimeofday(&oldtime, NULL);
+	gettimeofday(&starttime, NULL);
 	//}
 	bool Running = true;
 	while(Running)
@@ -339,7 +340,9 @@ int main(int argc, char *argv[])
 		//}
 		//Draw screen {
 		glClear(GL_COLOR_BUFFER_BIT); //only needed for transparent images.
-		float Time = ElapsedTime/1000.f;
+		double Time = (newtime.tv_sec - starttime.tv_sec) * 1000.0; //Get elapsed time
+		Time += (newtime.tv_usec - starttime.tv_usec) / 1000.0;
+		Time /= 1000.f;
 		float RColor = fabs(sin((PI+Time)/PI));
 		float GColor = fabs(sin(Time/PI));
 		float BColor = fabs(sin((2*PI+Time)/PI));
@@ -348,20 +351,17 @@ int main(int argc, char *argv[])
 		{
 			DrawFullscreenQuad(DesktopTexture,AMP,RColor,GColor,BColor);
 		} else {
-			//glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_SRC_COLOR);
-			glEnable(GL_BLEND);
-			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			DesktopTexture.Apply();
 			glBegin(GL_QUADS);
-				glColor3f(0.2+AMP,0.2+AMP,0.2+AMP);
+				glColor3f(0.4+AMP*RColor,0.4+AMP*GColor,0.4+AMP*BColor);
 				glVertex2f(0,0);
-				glTexCoord2d(0.0,0.0);
-				glVertex2f(1,0);
-				glTexCoord2d(1.0,0.0);
-				glVertex2f(1,1);
-				glTexCoord2d(1.0,1.0);
+				glTexCoord2d(1,0);
 				glVertex2f(0,1);
-				glTexCoord2d(0.0,1.0);
+				glTexCoord2d(0,0);
+				glVertex2f(1,1);
+				glTexCoord2d(0,1);
+				glVertex2f(1,0);
+				glTexCoord2d(1,1);
 			glEnd();
 		}
 		Win.SwapBuffer();
