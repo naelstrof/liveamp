@@ -134,8 +134,7 @@ int ReadArguments(int argc, char** argv, bool* Desktop, unsigned int* Width, uns
 		if (strcmp(argv[i],"-desktop") == 0 || strcmp(argv[i],"-d") == 0)
 		{
 			*Desktop = true;
-		}
-		if (strcmp(argv[i],"-w") == 0)
+		} else if (strcmp(argv[i],"-w") == 0)
 		{
 			i++;
 			if (i>argc)
@@ -149,8 +148,7 @@ int ReadArguments(int argc, char** argv, bool* Desktop, unsigned int* Width, uns
 				std::cout << "Width is too low, clamping at 1...\n";
 				*Width = 1;
 			}
-		}
-		if (strcmp(argv[i],"-h") == 0)
+		} else if (strcmp(argv[i],"-h") == 0)
 		{
 			i++;
 			if (i>=argc)
@@ -164,8 +162,7 @@ int ReadArguments(int argc, char** argv, bool* Desktop, unsigned int* Width, uns
 				std::cout << "Height is too low, clamping at 1...\n";
 				*Height = 1;
 			}
-		}
-		if (strcmp(argv[i],"-hz") == 0)
+		} else if (strcmp(argv[i],"-hz") == 0)
 		{
 			i++;
 			if (i>=argc)
@@ -179,8 +176,7 @@ int ReadArguments(int argc, char** argv, bool* Desktop, unsigned int* Width, uns
 				std::cout << "hz is too low, clamping at 1...\n";
 				*MaxFPS = 1;
 			}
-		}
-		if (strcmp(argv[i],"--h") == 0 || strcmp(argv[i],"--help") == 0)
+		} else if (strcmp(argv[i],"--h") == 0 || strcmp(argv[i],"--help") == 0)
 		{
 			char buffer[128];
 			char* confhome = getenv("XDG_CONFIG_HOME");
@@ -200,6 +196,11 @@ int ReadArguments(int argc, char** argv, bool* Desktop, unsigned int* Width, uns
 			std::cout << "There's also a way to make liveamp play a series of images as an animation, which an example file is included. ";
 			std::cout << "If you mess up your configuration files, just delete the whole liveamp config folder and restart the program to get a fresh copy. ";
 			std::cout << "\nMake sure to contact naelstrof@gmail.com to report bugs and request features!\n";
+			exit(0);
+		} else if (strcmp(argv[i],"") && i > 0)
+		{
+			std::cout << "Unkown argument: " << argv[i] << "\n";
+			std::cout << "Use --h or --help to learn how to use this program.\n";
 			exit(0);
 		}
 	}
