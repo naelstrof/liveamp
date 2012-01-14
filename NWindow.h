@@ -10,6 +10,8 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/shape.h>
 #include <X11/extensions/Xrender.h>
+#include <sys/time.h>
+#include <cstring>
 
 class NWindow
 {
@@ -18,13 +20,20 @@ private:
 	Window win;
 	GLXContext glc;
 	Atom wmDeleteMessage;
+	int fps;
+	float SleepStep;
+	timespec WaitTime, RememberTime;
+	timeval oldtime, newtime;
 public:
+	unsigned RealFPS;
 	bool Valid;
 	NWindow(unsigned int*, unsigned int*, const char*, bool, int, char**);
 	int SwapBuffer();
 	int Close();
-	int Open();
+	int CheckOpen();
 	bool ChangedSize(unsigned int*, unsigned int*);
+	int GetMouse(int*, int*);
+	int CapFPS(unsigned int);
 	unsigned int GetKey();
 };
 

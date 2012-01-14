@@ -54,8 +54,6 @@ static GLuint AmpID;
 static unsigned int Width = 0;
 static unsigned int Height = 0;
 static unsigned int MaxFPS = 60;
-static int fps;
-static timespec WaitTime, RememberTime;
 timeval oldtime, newtime, starttime;
 
 int DrawFullscreenQuad(NTexture::Texture texture, float Amp, float r, float g, float b)
@@ -288,9 +286,6 @@ int main(int argc, char *argv[])
 	
 	//loop {
 	//these are all used to cap the application's FPS {
-	float SleepStep = 0;
-	WaitTime.tv_sec = 0;
-	WaitTime.tv_nsec = 11000000;
 	gettimeofday(&oldtime, NULL);
 	gettimeofday(&starttime, NULL);
 	//}
@@ -304,7 +299,7 @@ int main(int argc, char *argv[])
 		if (!Desktop)
 		{
 			//Exit if XWindow is closed
-			if (!Win.Open())
+			if (!Win.CheckOpen())
 			{
 				std::cout << "X window was closed, exiting...\n";
 				return 0;
@@ -367,20 +362,7 @@ int main(int argc, char *argv[])
 		Win.SwapBuffer();
 		//}
 		//Cap fps at 60 {
-		nanosleep(&WaitTime, &RememberTime);
-		fps++;
-		if (ElapsedTime>1000.f)
-		{
-			float FrameTime = 1000.f/float(fps);
-			SleepStep=(1000.f/MaxFPS-(FrameTime-SleepStep));
-			if (SleepStep < 0)
-			{
-				SleepStep = 0;
-			}
-			WaitTime.tv_nsec = SleepStep*1000000L;
-			fps = 0;
-			gettimeofday(&oldtime, NULL);
-		}
+        Win.CapFPS(MaxFPS);
 		//}
 	}
 	//}
